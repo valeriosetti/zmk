@@ -1,0 +1,57 @@
+# Copyright (c) 2024 Valerio Setti
+# SPDX-License-Identifier: MIT
+
+description: |
+  Analog joystick for the Moustick board.
+  Reads two ADC channels and emits REL X/Y mouse movement events.
+  Deflection from center maps to cursor velocity in [-127, 127].
+
+  Example:
+    joystick: joystick {
+        compatible = "valerio,moustick-joystick";
+        io-channels = <&adc 0>, <&adc 1>;
+        io-channel-names = "x", "y";
+        deadzone = <100>;
+        poll-period-ms = <15>;
+    };
+
+compatible: "valerio,moustick-joystick"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: ADC channels for X and Y axes (in that order).
+
+  io-channel-names:
+    type: string-array
+    required: true
+    description: Must be ["x", "y"].
+
+  deadzone:
+    type: int
+    default: 50
+    description: |
+      ADC counts around the center that report zero.
+      Increase to suppress jitter at rest.
+
+  max-speed:
+    type: int
+    default: 10
+    description: |
+      Max mouse pointer moving speed when the joystick is at full angle.
+
+  poll-period-ms:
+    type: int
+    default: 10
+    description: How often to sample the ADC in milliseconds.
+
+  invert-x:
+    type: boolean
+    description: Invert X axis.
+
+  invert-y:
+    type: boolean
+    description: Invert Y axis.

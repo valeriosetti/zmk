@@ -1,0 +1,6 @@
+board:
+  name: moustick
+  full_name: Moustick
+  vendor: valerio
+  socs:
+  - name: rp2040

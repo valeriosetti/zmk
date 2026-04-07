@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Valerio Setti
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	/*
+	 * GP26 = ADC_CH0 (joystick X axis)
+	 * GP27 = ADC_CH1 (joystick Y axis)
+	 */
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>;
+			input-enable;
+		};
+	};
+};

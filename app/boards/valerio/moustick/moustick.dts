@@ -1,0 +1,141 @@
+/*
+ * Copyright (c) 2024 Valerio Setti
+ * SPDX-License-Identifier: MIT
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include "moustick-pinctrl.dtsi"
+#include <arm/raspberrypi/rp2040-boot-mode-retention.dtsi>
+#include <dt-bindings/zmk/matrix_transform.h>
+
+/ {
+	model = "Moustick";
+	compatible = "valerio,moustick";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,code-partition = &code_partition;
+		zmk,kscan = &kscan0;
+		zmk,physical-layout = &moustick_layout;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	/*
+	 * 3 mouse buttons wired as active-low with internal pull-ups:
+	 *   GP14 = left click   (position 0)
+	 *   GP15 = right click  (position 1)
+	 *   GP16 = middle click (position 2)
+	 */
+	kscan0: kscan_0 {
+		compatible = "zmk,kscan-gpio-direct";
+		wakeup-source;
+		input-gpios
+			= <&gpio0 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
+			, <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
+			, <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
+			;
+	};
+
+	default_transform: keymap_transform_0 {
+		compatible = "zmk,matrix-transform";
+		columns = <3>;
+		rows = <1>;
+		map = <RC(0,0) RC(0,1) RC(0,2)>;
+	};
+
+	moustick_layout: moustick_layout {
+		compatible = "zmk,physical-layout";
+		display-name = "Moustick";
+		transform = <&default_transform>;
+		kscan = <&kscan0>;
+	};
+
+	/*
+	 * Analog joystick via RP2040 ADC:
+	 *   GP26 (ADC_CH0) = X axis
+	 *   GP27 (ADC_CH1) = Y axis
+	 *
+	 * The RP2040 ADC is 12-bit, values 0-4095. Center ~2048.
+	 * deadzone: ADC counts around center that report zero (suppress jitter).
+	 * Tune deadzone after measuring your joystick's actual resting value.
+	 *
+	 * Uses a custom driver (valerio,moustick-joystick) that emits REL events,
+	 * giving velocity-based movement: deflect more = faster cursor.
+	 */
+	joystick: joystick {
+		compatible = "valerio,moustick-joystick";
+		io-channels = <&adc 0>, <&adc 1>;
+		io-channel-names = "x", "y";
+		deadzone = <50>;
+		max-speed = <10>;
+		poll-period-ms = <10>;
+		invert-x;
+		invert-y;
+	};
+
+	joystick_listener: joystick_listener {
+		compatible = "zmk,input-listener";
+		device = <&joystick>;
+	};
+};
+
+&flash0 {
+	/*
+	 * 2MB flash. Update DT_SIZE_M() if your PCB uses a different flash size.
+	 * Storage partition is placed in the last 512KB.
+	 */
+	reg = <0x10000000 DT_SIZE_M(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100 - DT_SIZE_K(512))>;
+			read-only;
+		};
+
+		storage_partition: partition@180000 {
+			label = "storage";
+			reg = <0x180000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};

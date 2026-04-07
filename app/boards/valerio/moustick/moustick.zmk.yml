@@ -1,0 +1,9 @@
+file_format: "1"
+id: moustick
+name: Moustick
+type: board
+arch: arm
+outputs:
+  - usb
+features:
+  - pointing

@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=125000000
+CONFIG_RESET=y
+
+# Enable clock control
+CONFIG_CLOCK_CONTROL=y
+
+# Use code partition defined in DT
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Output UF2 — native RP2040 bootloader supports it
+CONFIG_BUILD_OUTPUT_UF2=y
+
+# USB HID transport
+CONFIG_ZMK_USB=y
+
+# Settings via NVS in flash
+CONFIG_MPU_ALLOW_FLASH_WRITE=y
+CONFIG_NVS=y
+CONFIG_SETTINGS_NVS=y
+CONFIG_FLASH=y
+CONFIG_FLASH_PAGE_LAYOUT=y
+CONFIG_FLASH_MAP=y
+
+# Bootloader retention (for double-tap reset to UF2 bootloader)
+CONFIG_RETAINED_MEM=y
+CONFIG_RETENTION=y
+CONFIG_RETENTION_BOOT_MODE=y
+
+# ADC and Zephyr input subsystem for the analog joystick
+CONFIG_ADC=y
+CONFIG_INPUT=y
+
+# ZMK pointing/mouse HID support
+CONFIG_ZMK_POINTING=y
