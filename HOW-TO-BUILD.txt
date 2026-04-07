@@ -1,0 +1,2 @@
+export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.16.9
+clear && west build -p -b moustick/rp2040
