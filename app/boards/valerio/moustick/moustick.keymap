@@ -1,11 +1,30 @@
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/mouse.h>
 
+#define DEFAULT     0
+#define LAYER1      1
+
 / {
-    keymap {
-        compatible = "zmk,keymap";
-        default_layer {
-            bindings = <&mkp RCLK  &mkp MCLK  &mkp LCLK>;
-        };
-    };
+	behaviors {
+		ht: hold_tap {
+			compatible = "zmk,behavior-hold-tap";
+			#binding-cells = <2>;
+			flavor = "balanced";
+			tapping-term-ms = <220>;
+			quick-tap-ms = <150>;
+			require-prior-idle-ms = <100>;
+			bindings = <&mo>, <&mkp>;
+		};
+	};
+
+	keymap {
+		compatible = "zmk,keymap";
+		default_layer {
+			bindings = <&mkp RCLK  &ht LAYER1 MCLK  &mkp LCLK>;
+		};
+
+		layer1 {
+			bindings = <&trans  &trans  &trans>;
+		};
+	};
 };

@@ -9,6 +9,7 @@
 #include "moustick-pinctrl.dtsi"
 #include <arm/raspberrypi/rp2040-boot-mode-retention.dtsi>
 #include <dt-bindings/zmk/matrix_transform.h>
+#include <input/processors.dtsi>
 
 / {
 	model = "Moustick";
@@ -27,20 +28,12 @@
 		watchdog0 = &wdt0;
 	};
 
-	/*
-	 * 3 mouse buttons wired as active-low with internal pull-ups:
-	 *   GP14 = left click   (position 0)
-	 *   GP15 = right click  (position 1)
-	 *   GP16 = middle click (position 2)
-	 */
 	kscan0: kscan_0 {
 		compatible = "zmk,kscan-gpio-direct";
 		wakeup-source;
-		input-gpios
-			= <&gpio0 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
-			, <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
-			, <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
-			;
+		input-gpios = <&gpio0 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					  <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					  <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
 	default_transform: keymap_transform_0 {
@@ -57,18 +50,6 @@
 		kscan = <&kscan0>;
 	};
 
-	/*
-	 * Analog joystick via RP2040 ADC:
-	 *   GP26 (ADC_CH0) = X axis
-	 *   GP27 (ADC_CH1) = Y axis
-	 *
-	 * The RP2040 ADC is 12-bit, values 0-4095. Center ~2048.
-	 * deadzone: ADC counts around center that report zero (suppress jitter).
-	 * Tune deadzone after measuring your joystick's actual resting value.
-	 *
-	 * Uses a custom driver (valerio,moustick-joystick) that emits REL events,
-	 * giving velocity-based movement: deflect more = faster cursor.
-	 */
 	joystick: joystick {
 		compatible = "valerio,moustick-joystick";
 		io-channels = <&adc 0>, <&adc 1>;
@@ -83,6 +64,11 @@
 	joystick_listener: joystick_listener {
 		compatible = "zmk,input-listener";
 		device = <&joystick>;
+
+		scroll_layer {
+			layers = <1>;
+			input-processors = <&zip_xy_to_scroll_mapper>, <&zip_scroll_scaler 1 3>;
+		};
 	};
 };
 
