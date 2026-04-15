@@ -31,8 +31,6 @@ struct joystick_config {
     uint16_t deadzone;
     uint16_t max_speed;
     uint32_t poll_period_ms;
-    uint8_t invert_x;
-    uint8_t invert_y;
 };
 
 struct joystick_data {
@@ -40,15 +38,13 @@ struct joystick_data {
     struct k_work_delayable work;
     uint16_t center_x;
     uint16_t center_y;
-    int16_t scale_x;
-    int16_t scale_y;
 };
 
 /*
  * Map a raw 12-bit ADC value to a signed velocity in [-127, 127].
  * Values within `deadzone` of center (2048) report 0.
  */
-static int16_t adc_to_velocity(uint16_t value, uint16_t center, const struct joystick_config *cfg) {
+static int32_t adc_to_velocity(uint16_t value, uint16_t center, const struct joystick_config *cfg) {
     int16_t deadzone = (int16_t)cfg->deadzone;
     int16_t max_speed = (int16_t)cfg->max_speed;
     int16_t deflection = (int16_t)(value - center);
@@ -57,7 +53,7 @@ static int16_t adc_to_velocity(uint16_t value, uint16_t center, const struct joy
         return 0;
     }
 
-    int16_t magnitude = (deflection > 0) ? deflection - cfg->deadzone : deflection + deadzone;
+    int16_t magnitude = (deflection > 0) ? deflection - deadzone : deflection + deadzone;
     int16_t range = center - deadzone;
     int32_t velocity = (magnitude * max_speed) / range;
 
@@ -117,8 +113,8 @@ static void joystick_work_handler(struct k_work *work) {
         goto exit;
     }
 
-    int16_t vx = adc_to_velocity(x_val, data->center_x, cfg) * data->scale_x;
-    int16_t vy = adc_to_velocity(y_val, data->center_y, cfg) * data->scale_y;
+    int32_t vx = adc_to_velocity(x_val, data->center_x, cfg);
+    int32_t vy = adc_to_velocity(y_val, data->center_y, cfg);
 
     if (vx != 0) {
         input_report_rel(dev, INPUT_REL_X, vx, (vy == 0), K_FOREVER);
@@ -185,9 +181,6 @@ static int joystick_init(const struct device *dev) {
     }
     data->center_y = val;
 
-    data->scale_x = (cfg->invert_x) ? -1 : 1;
-    data->scale_y = (cfg->invert_y) ? -1 : 1;
-
     k_work_init_delayable(&data->work, joystick_work_handler);
     k_work_reschedule(&data->work, K_MSEC(cfg->poll_period_ms));
 
@@ -203,8 +196,6 @@ static int joystick_init(const struct device *dev) {
         .deadzone = DT_INST_PROP(n, deadzone),                                                     \
         .max_speed = DT_INST_PROP(n, max_speed),                                                   \
         .poll_period_ms = DT_INST_PROP(n, poll_period_ms),                                         \
-        .invert_x = DT_INST_NODE_HAS_PROP(n, invert_x),                                            \
-        .invert_y = DT_INST_NODE_HAS_PROP(n, invert_y),                                            \
     };                                                                                             \
     DEVICE_DT_INST_DEFINE(n, joystick_init, NULL, &joystick_data_##n, &joystick_cfg_##n,           \
                           POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
