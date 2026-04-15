@@ -3,10 +3,21 @@
 
 #define DEFAULT     0
 #define LAYER1      1
+#define LAYER2      2
 
 / {
 	behaviors {
-		ht: hold_tap {
+		ht_scroll: hold_tap_scroll {
+			compatible = "zmk,behavior-hold-tap";
+			#binding-cells = <2>;
+			flavor = "balanced";
+			tapping-term-ms = <220>;
+			quick-tap-ms = <150>;
+			require-prior-idle-ms = <100>;
+			bindings = <&mo>, <&mkp>;
+		};
+
+		ht_speed: hold_tap_speed {
 			compatible = "zmk,behavior-hold-tap";
 			#binding-cells = <2>;
 			flavor = "balanced";
@@ -20,10 +31,14 @@
 	keymap {
 		compatible = "zmk,keymap";
 		default_layer {
-			bindings = <&mkp RCLK  &ht LAYER1 MCLK  &mkp LCLK>;
+			bindings = <&ht_speed LAYER2 RCLK  &ht_scroll LAYER1 MCLK  &mkp LCLK>;
 		};
 
 		layer1 {
+			bindings = <&trans  &trans  &trans>;
+		};
+
+		layer2 {
 			bindings = <&trans  &trans  &trans>;
 		};
 	};
